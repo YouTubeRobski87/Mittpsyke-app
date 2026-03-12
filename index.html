@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="sv" data-theme="emerald">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#16a34a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MittPsyke" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>MittPsyke Wellness Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.344.0/dist/umd/lucide-react.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .mood-btn { transition: all 0.2s; }
+    .mood-btn:hover, .mood-btn.active { transform: scale(1.15); }
+  </style>
+</head>
+<body class="bg-green-50 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+    const { Home, BookOpen, TrendingUp, PlusCircle, Trash2, ArrowLeft, ExternalLink, Heart, Brain, Shield, Sparkles } = lucideReact;
+
+    // --- Storage helpers (localStorage) ---
+    function loadData(key, fallback) {
+      try { return JSON.parse(localStorage.getItem('mittpsyke_' + key)) || fallback; }
+      catch { return fallback; }
+    }
+    function saveData(key, data) {
+      localStorage.setItem('mittpsyke_' + key, JSON.stringify(data));
+    }
+
+    // --- Navigation ---
+    function Navigation({ active, onNavigate }) {
+      const items = [
+        { id: 'home', label: 'Hem', icon: Home },
+        { id: 'mood', label: 'Mående', icon: PlusCircle },
+        { id: 'journal', label: 'Dagbok', icon: BookOpen },
+        { id: 'progress', label: 'Framsteg', icon: TrendingUp },
+      ];
+      return (
+        <div className="bg-white border-t border-green-100 flex justify-around py-2 shrink-0">
+          {items.map(({ id, label, icon: Icon }) => (
+            <button key={id} onClick={() => onNavigate(id)}
+              className={`flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-colors ${active === id ? 'text-green-600 font-semibold' : 'text-gray-400 hover:text-green-500'}`}>
+              <Icon size={20} />
+              <span className="text-xs">{label}</span>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // --- Mood Check-In ---
+    function MoodCheckIn({ onSave }) {
+      const [mood, setMood] = useState(null);
+      const [focus, setFocus] = useState('Allmänt');
+      const [note, setNote] = useState('');
+      const moods = [
+        { val: 1, emoji: '😢', label: 'Mycket dåligt' },
+        { val: 2, emoji: '😕', label: 'Dåligt' },
+        { val: 3, emoji: '😐', label: 'Okej' },
+        { val: 4, emoji: '🙂', label: 'Bra' },
+        { val: 5, emoji: '😊', label: 'Mycket bra' },
+      ];
+      const areas = ['Ångest', 'Depression', 'Trauma', 'Allmänt'];
+      const handleSave = () => {
+        if (!mood) return;
+        onSave({ mood, focus, note, date: new Date().toISOString() });
+        setMood(null); setNote(''); setFocus('Allmänt');
+      };
+      return (
+        <div className="p-4 space-y-6">
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-green-800">Hur mår du?</h2>
+            <p className="text-sm text-green-600 mt-1">Välj det som bäst beskriver ditt mående just nu</p>
+          </div>
+          <div className="flex justify-center gap-4">
+            {moods.map(m => (
+              <button key={m.val} onClick={() => setMood(m.val)}
+                className={`mood-btn flex flex-col items-center gap-1 p-2 rounded-xl ${mood === m.val ? 'active bg-green-100 ring-2 ring-green-400' : ''}`}>
+                <span className="text-3xl">{m.emoji}</span>
+                <span className="text-xs text-gray-500">{m.label}</span>
+              </button>
+            ))}
+          </div>
+          <div>
+            <label className="text-sm font-medium text-green-700 mb-2 block">Fokusområde</label>
+            <div className="flex flex-wrap gap-2">
+              {areas.map(a => (
+                <button key={a} onClick={() => setFocus(a)}
+                  className={`btn btn-sm ${focus === a ? 'btn-success' : 'btn-outline btn-success'}`}>{a}</button>
+              ))}
+            </div>
+          </div>
+          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Berätta mer om hur du känner..."
+            className="textarea textarea-bordered w-full h-24 bg-white focus:border-green-400" />
+          <button onClick={handleSave} disabled={!mood}
+            className="btn btn-success w-full text-white">Spara incheckning</button>
+        </div>
+      );
+    }
+
+    // --- Journal ---
+    function JournalView({ entries, onAdd, onDelete }) {
+      const [writing, setWriting] = useState(false);
+      const [title, setTitle] = useState('');
+      const [body, setBody] = useState('');
+      const [focus, setFocus] = useState('Allmänt');
+      const areas = ['Ångest', 'Depression', 'Trauma', 'Allmänt'];
+      const handleSave = () => {
+        if (!title.trim() && !body.trim()) return;
+        onAdd({ title: title || 'Utan titel', body, focus, date: new Date().toISOString() });
+        setTitle(''); setBody(''); setFocus('Allmänt'); setWriting(false);
+      };
+      if (writing) return (
+        <div className="p-4 space-y-4">
+          <button onClick={() => setWriting(false)} className="btn btn-ghost btn-sm gap-1"><ArrowLeft size={16}/> Tillbaka</button>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titel..."
+            className="input input-bordered w-full bg-white focus:border-green-400" />
+          <div className="flex flex-wrap gap-2">
+            {areas.map(a => (
+              <button key={a} onClick={() => setFocus(a)}
+                className={`btn btn-xs ${focus === a ? 'btn-success' : 'btn-outline btn-success'}`}>{a}</button>
+            ))}
+          </div>
+          <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Skriv dina tankar..."
+            className="textarea textarea-bordered w-full h-40 bg-white focus:border-green-400" />
+          <button onClick={handleSave} className="btn btn-success w-full text-white">Spara</button>
+        </div>
+      );
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-green-800">📖 Dagbok</h2>
+            <button onClick={() => setWriting(true)} className="btn btn-success btn-sm text-white gap-1"><PlusCircle size={16}/> Ny</button>
+          </div>
+          {entries.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <BookOpen size={48} className="mx-auto mb-3 opacity-50" />
+              <p>Inga anteckningar ännu</p>
+              <p className="text-sm">Tryck på "Ny" för att börja skriva</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {entries.slice().reverse().map((e, i) => (
+                <div key={i} className="card bg-white shadow-sm">
+                  <div className="card-body p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-green-800">{e.title}</h3>
+                        <span className="badge badge-success badge-outline badge-sm mt-1">{e.focus}</span>
+                      </div>
+                      <button onClick={() => onDelete(entries.length - 1 - i)} className="btn btn-ghost btn-xs text-red-400"><Trash2 size={14}/></button>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{e.body}</p>
+                    <p className="text-xs text-gray-400 mt-2">{new Date(e.date).toLocaleDateString('sv-SE')}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- Progress ---
+    function ProgressView({ moods }) {
+      const recent = moods.slice(-14);
+      const avg = recent.length ? (recent.reduce((s, m) => s + m.mood, 0) / recent.length).toFixed(1) : '—';
+      const focusCounts = {};
+      moods.forEach(m => { focusCounts[m.focus] = (focusCounts[m.focus] || 0) + 1; });
+      const maxCount = Math.max(...Object.values(focusCounts), 1);
+      return (
+        <div className="p-4 space-y-6">
+          <h2 className="text-xl font-bold text-green-800">📊 Framsteg</h2>
+          <div className="stats shadow w-full bg-white">
+            <div className="stat">
+              <div className="stat-title">Genomsnitt (14 dagar)</div>
+              <div className="stat-value text-green-600">{avg}</div>
+              <div className="stat-desc">av 5.0</div>
+            </div>
+            <div className="stat">
+              <div className="stat-title">Totala incheckningar</div>
+              <div className="stat-value text-green-600">{moods.length}</div>
+            </div>
+          </div>
+          {recent.length > 0 && (
+            <div className="card bg-white shadow-sm">
+              <div className="card-body p-4">
+                <h3 className="font-semibold text-green-700 mb-3">Mående-trend</h3>
+                <div className="flex items-end gap-1 h-32">
+                  {recent.map((m, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1">
+                      <div className="bg-green-400 rounded-t w-full transition-all" style={{ height: `${(m.mood / 5) * 100}%` }} />
+                      <span className="text-[10px] text-gray-400">{new Date(m.date).getDate()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {Object.keys(focusCounts).length > 0 && (
+            <div className="card bg-white shadow-sm">
+              <div className="card-body p-4">
+                <h3 className="font-semibold text-green-700 mb-3">Fokusområden</h3>
+                <div className="space-y-2">
+                  {Object.entries(focusCounts).map(([area, count]) => (
+                    <div key={area} className="flex items-center gap-3">
+                      <span className="text-sm w-24 text-gray-600">{area}</span>
+                      <progress className="progress progress-success flex-1" value={count} max={maxCount} />
+                      <span className="text-sm text-gray-500 w-6 text-right">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {moods.length === 0 && (
+            <div className="text-center py-8 text-gray-400">
+              <TrendingUp size={48} className="mx-auto mb-3 opacity-50" />
+              <p>Ingen data ännu</p>
+              <p className="text-sm">Gör din första incheckning för att se framsteg</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- Home ---
+    function HomeView({ moods, journals, onNavigate }) {
+      const lastMood = moods.length ? moods[moods.length - 1] : null;
+      const lastJournal = journals.length ? journals[journals.length - 1] : null;
+      const moodEmojis = { 1: '😢', 2: '😕', 3: '😐', 4: '🙂', 5: '😊' };
+      return (
+        <div className="p-4 space-y-5">
+          <div className="text-center py-4">
+            <div className="flex justify-center gap-2 mb-2">
+              <Heart size={24} className="text-green-500" />
+              <Brain size={24} className="text-green-500" />
+              <Shield size={24} className="text-green-500" />
+            </div>
+            <h1 className="text-2xl font-bold text-green-800">MittPsyke</h1>
+            <p className="text-green-600 text-sm mt-1">Din trygga plats för reflektion</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => onNavigate('mood')} className="btn btn-success text-white gap-2 h-auto py-4 flex-col">
+              <PlusCircle size={24}/><span>Ny incheckning</span>
+            </button>
+            <button onClick={() => onNavigate('journal')} className="btn btn-outline btn-success gap-2 h-auto py-4 flex-col">
+              <BookOpen size={24}/><span>Skriv dagbok</span>
+            </button>
+          </div>
+          {lastMood && (
+            <div className="card bg-white shadow-sm">
+              <div className="card-body p-4">
+                <h3 className="font-semibold text-green-700">Senaste mående</h3>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-3xl">{moodEmojis[lastMood.mood]}</span>
+                  <div>
+                    <span className="badge badge-success badge-outline badge-sm">{lastMood.focus}</span>
+                    <p className="text-xs text-gray-400 mt-1">{new Date(lastMood.date).toLocaleDateString('sv-SE')}</p>
+                  </div>
+                </div>
+                {lastMood.note && <p className="text-sm text-gray-600 mt-2">{lastMood.note}</p>}
+              </div>
+            </div>
+          )}
+          {lastJournal && (
+            <div className="card bg-white shadow-sm">
+              <div className="card-body p-4">
+                <h3 className="font-semibold text-green-700">Senaste dagbok</h3>
+                <p className="font-medium text-gray-700 mt-1">{lastJournal.title}</p>
+                <p className="text-sm text-gray-500 line-clamp-2">{lastJournal.body}</p>
+                <p className="text-xs text-gray-400 mt-1">{new Date(lastJournal.date).toLocaleDateString('sv-SE')}</p>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <a href="https://www.mittpsyke.se" target="_blank" rel="noopener"
+              className="btn btn-outline btn-sm gap-1"><Sparkles size={14}/> mittpsyke.se</a>
+            <a href="https://www.stodlinjer.se" target="_blank" rel="noopener"
+              className="btn btn-outline btn-sm gap-1"><ExternalLink size={14}/> stödlinjer.se</a>
+          </div>
+        </div>
+      );
+    }
+
+    // --- Main App ---
+    function App() {
+      const [view, setView] = useState('home');
+      const [moods, setMoods] = useState(() => loadData('moods', []));
+      const [journals, setJournals] = useState(() => loadData('journals', []));
+
+      useEffect(() => saveData('moods', moods), [moods]);
+      useEffect(() => saveData('journals', journals), [journals]);
+
+      const handleMoodSave = (entry) => { setMoods(prev => [...prev, entry]); setView('home'); };
+      const handleJournalAdd = (entry) => { setJournals(prev => [...prev, entry]); };
+      const handleJournalDelete = (idx) => { setJournals(prev => prev.filter((_, i) => i !== idx)); };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-green-50 max-w-md mx-auto">
+          <div className="bg-green-600 text-white text-center py-3 font-bold text-lg shrink-0 shadow">
+            🌿 MittPsyke
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {view === 'home' && <HomeView moods={moods} journals={journals} onNavigate={setView} />}
+            {view === 'mood' && <MoodCheckIn onSave={handleMoodSave} />}
+            {view === 'journal' && <JournalView entries={journals} onAdd={handleJournalAdd} onDelete={handleJournalDelete} />}
+            {view === 'progress' && <ProgressView moods={moods} />}
+          </div>
+          <Navigation active={view} onNavigate={setView} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
