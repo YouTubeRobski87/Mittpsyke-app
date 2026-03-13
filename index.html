@@ -44,6 +44,7 @@
         { id: 'home', label: 'Hem', icon: Home },
         { id: 'mood', label: 'Mående', icon: PlusCircle },
         { id: 'journal', label: 'Dagbok', icon: BookOpen },
+        { id: 'guides', label: 'Guider', icon: BookOpen },
         { id: 'progress', label: 'Framsteg', icon: TrendingUp },
       ];
       return (
@@ -423,6 +424,158 @@
       );
     }
 
+
+    // --- Guides ---
+    function GuidesView() {
+      const [open, setOpen] = React.useState(null);
+      const guides = [
+        {
+          id: 'anxiety',
+          emoji: '💭',
+          color: 'blue',
+          title: 'Ångest',
+          subtitle: 'Förstå och hantera ångesten',
+          steps: [
+            { icon: '🔍', title: 'Vad är ångest?', body: 'Ångest är kroppens larmsystem — ett naturligt svar på upplevd fara. Det är obehagligt men inte farligt. Hjärnan tolkar en situation som hotfull och triggar stressreaktioner som hjärtklappning, andnöd och oro.' },
+            { icon: '🌬️', title: '4-7-8 andning', body: 'Andas in i 4 sekunder → håll i 7 sekunder → andas ut i 8 sekunder. Upprepa 3–4 gånger. Tekniken aktiverar det parasympatiska nervsystemet och lugnar kroppen snabbt.' },
+            { icon: '🌿', title: '5-4-3-2-1 grounding', body: 'Nämn 5 saker du ser, 4 du hör, 3 du kan röra vid, 2 du kan lukta, 1 du kan smaka. Metoden tar dig ur tankarna och tillbaka till nuet.' },
+            { icon: '📓', title: 'Skriv ner oron', body: 'Ta fram ett papper och skriv ner vad som oroar dig. Fråga dig: Är detta ett faktum eller en tanke? Kan jag göra något åt det nu? Ofta krymper oron bara av att sätta ord på den.' },
+            { icon: '🚶', title: 'Rörelse hjälper', body: 'Även en 10-minuters promenad sänker stresshormoner märkbart. Du behöver inte springa maraton — kroppen svarar snabbt på mild rörelse.' },
+          ]
+        },
+        {
+          id: 'depression',
+          emoji: '🌧️',
+          color: 'indigo',
+          title: 'Depression',
+          subtitle: 'Steg ut ur det mörka',
+          steps: [
+            { icon: '💡', title: 'Vad är depression?', body: 'Depression är mer än att vara ledsen. Det är en varaktig sänkning av energi, motivation och glädje. Hjärnans kemi förändras och allt känns tungt. Det är en riktig sjukdom — inte en svaghet.' },
+            { icon: '🌅', title: 'Börja litet', body: 'Gör en sak varje dag. Inte tio. En. Borsta tänderna, ta en dusch, gå ut en minut. Aktivering skapar energi, inte tvärtom. Varje litet steg bryter mönstret.' },
+            { icon: '☀️', title: 'Ljus och rytm', body: 'Gå ut på morgonen — naturligt ljus reglerar serotonin och din dygnsrytm. Försök lägga dig och stiga upp ungefär samma tid varje dag, även helger.' },
+            { icon: '🤝', title: 'Bryt isoleringen', body: 'Depression vill att du ska vara ensam — motarbeta det. Skicka ett meddelande till en person du litar på. Du behöver inte förklara allt. "Hej, tänkte på dig" räcker.' },
+            { icon: '🧠', title: 'Utmana negativa tankar', body: 'Depression ljuger. "Allt är hopplöst" och "Ingen bryr sig" är symptom, inte fakta. Skriv ner tanken och fråga: Vad är beviset? Hur skulle en vän se på det här?' },
+          ]
+        },
+        {
+          id: 'trauma',
+          emoji: '🌊',
+          color: 'teal',
+          title: 'Trauma',
+          subtitle: 'Läka från svåra upplevelser',
+          steps: [
+            { icon: '💙', title: 'Vad är trauma?', body: 'Trauma uppstår när en händelse överväldigar din förmåga att hantera den. Det lagras i kroppen och nervsystemet, inte bara i minnet. Reaktioner som flashbacks, rädsla och undvikande är normala svar på onormala upplevelser.' },
+            { icon: '🌱', title: 'Trygghet först', body: 'Läkning börjar med att skapa trygghet — fysiskt och emotionellt. Identifiera platser, personer och rutiner som får dig att känna dig trygg. Det är grunden för allt annat.' },
+            { icon: '🔗', title: 'Kropp och koppling', body: 'Trauma sitter i kroppen. Mjuka rörelser som yoga, promenader eller dans hjälper nervsystemet att reglera sig. Du behöver inte prata om det för att börja läka.' },
+            { icon: '📝', title: 'Skriv om det', body: 'Forskning visar att skriva om traumatiska upplevelser i 15–20 minuter under flera dagar kan minska symtom. Det handlar inte om att förklara — bara att uttrycka.' },
+            { icon: '🤗', title: 'Du förtjänar stöd', body: 'Trauma läker bäst i relation. En trygg terapeut, stödgrupp eller nära vän gör skillnad. Att söka hjälp är styrka, inte svaghet.' },
+          ]
+        },
+        {
+          id: 'stress',
+          emoji: '⚡',
+          color: 'orange',
+          title: 'Stress',
+          subtitle: 'Vinn tillbaka lugnet',
+          steps: [
+            { icon: '🔋', title: 'Vad händer vid stress?', body: 'Stress är kroppens beredskapsläge — adrenalin och kortisol pumpar in. Kortvarig stress är bra. Kronisk stress sliter på hjärta, immunförsvar och hjärna. Kroppen behöver återhämtning.' },
+            { icon: '📋', title: 'Prioritera brutalt', body: 'Skriv ner allt du ska göra. Cirka sedan bara det som faktiskt måste göras idag. Resten väntar. Hjärnan lugnar sig när listan krymper.' },
+            { icon: '⏸️', title: 'Mikro-pauser', body: 'Ta en 2-minuters paus var 45:e minut. Res på dig, titta bort från skärmen, andas djupt. Dessa mikropauser återställer fokus bättre än att kämpa igenom utan pauser.' },
+            { icon: '🚫', title: 'Säg nej', body: '"Nej" är en komplett mening. Du behöver inte motivera det. Varje ja till något nytt är ett nej till din återhämtning. Börja öva på att säga nej till en sak per vecka.' },
+            { icon: '🌙', title: 'Sömn är medicin', body: 'Sömnbrist förstärker stressreaktioner dramatiskt. 7–9 timmar är inte lyx. Skärmfri 30 min innan sänggåendet, sval temperatur i rummet, och fast sömnrytm — tre enkla regler.' },
+          ]
+        },
+        {
+          id: 'sleep',
+          emoji: '🌙',
+          color: 'violet',
+          title: 'Sömnproblem',
+          subtitle: 'Hitta vägen till god sömn',
+          steps: [
+            { icon: '🧬', title: 'Varför sover vi dåligt?', body: 'Stress, skärmar, oregelbundna tider och koffein är vanligaste bovarna. Sömnbrist skapar en ond cirkel: du är trött men kan inte sova. Hjärnan hamnar i ett överaktivt läge.' },
+            { icon: '⏰', title: 'Fast rytm', body: 'Stig upp samma tid varje dag — även helger. Det är det enskilt viktigaste för god sömn. Din inre klocka behöver konsekvens för att fungera optimalt.' },
+            { icon: '📵', title: 'Skärmfri buffert', body: 'Stäng av skärmar 30–60 minuter innan du lägger dig. Blått ljus hämmar melatoninproduktionen. Byt till en bok, lugn musik eller stretching.' },
+            { icon: '🛏️', title: 'Sängen = sömn', body: 'Använd sängen bara för sömn. Inte för att scrolla, titta film eller jobba. Hjärnan lär sig koppla sängen med vakenhet — bryt det mönstret.' },
+            { icon: '🫁', title: 'Body scan', body: 'Ligg ner och fokusera på en kroppsdel i taget, från tårna upp till hjässan. Känn tyngden, slappna av varje del medvetet. Tekniken sänker hjärtfrekvens och varvar ner tankarna.' },
+          ]
+        },
+        {
+          id: 'selfesteem',
+          emoji: '💪',
+          color: 'green',
+          title: 'Självkänsla',
+          subtitle: 'Bygg ett starkare jag',
+          steps: [
+            { icon: '🌟', title: 'Vad är självkänsla?', body: 'Självkänsla är din grundläggande känsla av att vara värd kärlek och respekt — oavsett prestationer. Den formas tidigt men kan förändras hela livet. Du är inte fast i den du är idag.' },
+            { icon: '✍️', title: 'Tre saker varje kväll', body: 'Skriv tre saker du gjort bra under dagen — hur litet som helst. "Jag steg upp" räknas. Hjärnan har en negativitetsbias; du måste aktivt mata den med positiva bevis om dig själv.' },
+            { icon: '🔄', title: 'Utmana din inre kritiker', body: 'Lyssna på hur du pratar med dig själv. Skulle du säga det till en vän? Ofta inte. Prova att bemöta den inre kritikern med "Tack för oron, men jag klarar det." Inte suppression — svar.' },
+            { icon: '🎯', title: 'Gör det du säger', body: 'Självkänsla byggs av att hålla löften till sig själv. Börja med ett litet åtagande och håll det. Varje gång du gör det skickar du ett budskap till din hjärna: "Jag litar på mig själv."' },
+            { icon: '🚫', title: 'Sätt gränser', body: 'Tydliga gränser kommunicerar att du värdesätter dig själv. Det handlar inte om att vara svår — det handlar om att veta vad du behöver och kommunicera det med respekt.' },
+          ]
+        },
+      ];
+
+      const colorMap = {
+        blue: { bg: 'bg-blue-50', border: 'border-blue-200', title: 'text-blue-800', tag: 'badge-info', stepBg: 'bg-blue-50', stepBorder: 'border-blue-100' },
+        indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', title: 'text-indigo-800', tag: 'badge-info', stepBg: 'bg-indigo-50', stepBorder: 'border-indigo-100' },
+        teal: { bg: 'bg-teal-50', border: 'border-teal-200', title: 'text-teal-800', tag: 'badge-success', stepBg: 'bg-teal-50', stepBorder: 'border-teal-100' },
+        orange: { bg: 'bg-orange-50', border: 'border-orange-200', title: 'text-orange-800', tag: 'badge-warning', stepBg: 'bg-orange-50', stepBorder: 'border-orange-100' },
+        violet: { bg: 'bg-violet-50', border: 'border-violet-200', title: 'text-violet-800', tag: 'badge-info', stepBg: 'bg-violet-50', stepBorder: 'border-violet-100' },
+        green: { bg: 'bg-green-50', border: 'border-green-200', title: 'text-green-800', tag: 'badge-success', stepBg: 'bg-green-50', stepBorder: 'border-green-100' },
+      };
+
+      return (
+        <div className="p-4 space-y-4 pb-6">
+          <div>
+            <h2 className="text-xl font-bold text-green-800">📚 Guider</h2>
+            <p className="text-sm text-gray-500 mt-1">Klicka på en guide för att läsa</p>
+          </div>
+          {guides.map(g => {
+            const isOpen = open === g.id;
+            const c = colorMap[g.color];
+            return (
+              <div key={g.id} className={"card shadow-sm border transition-all duration-200 " + c.border + " " + (isOpen ? c.bg : "bg-white")}>
+                <button
+                  className="card-body p-4 text-left w-full"
+                  onClick={() => setOpen(isOpen ? null : g.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{g.emoji}</span>
+                      <div>
+                        <h3 className={"font-bold text-base " + c.title}>{g.title}</h3>
+                        <p className="text-xs text-gray-500">{g.subtitle}</p>
+                      </div>
+                    </div>
+                    <span className={"text-gray-400 text-lg transition-transform duration-200 " + (isOpen ? "rotate-180" : "")}>▾</span>
+                  </div>
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 space-y-3">
+                    {g.steps.map((s, i) => (
+                      <div key={i} className={"rounded-xl p-3 border " + c.stepBg + " " + c.stepBorder}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xl">{s.icon}</span>
+                          <span className={"font-semibold text-sm " + c.title}>{s.title}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed">{s.body}</p>
+                      </div>
+                    ))}
+                    <div className="pt-1">
+                      <a href={"https://www.mittpsyke.se/" + g.id} target="_blank" rel="noopener"
+                        className="btn btn-sm btn-outline btn-success w-full gap-1">
+                        Läs mer på mittpsyke.se →
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
     // --- Home ---
     function HomeView({ moods, journals, onNavigate }) {
       const lastMood = moods.length ? moods[moods.length - 1] : null;
@@ -504,6 +657,7 @@
             {view === 'home' && <HomeView moods={moods} journals={journals} onNavigate={setView} />}
             {view === 'mood' && <MoodCheckIn onSave={handleMoodSave} />}
             {view === 'journal' && <JournalView entries={journals} onAdd={handleJournalAdd} onDelete={handleJournalDelete} />}
+            {view === 'guides' && <GuidesView />}
             {view === 'progress' && <ProgressView moods={moods} journals={journals} />}
           </div>
           <Navigation active={view} onNavigate={setView} />
@@ -520,3 +674,4 @@
   </script>
 </body>
 </html>
+
