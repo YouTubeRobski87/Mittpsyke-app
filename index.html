@@ -173,41 +173,144 @@
     }
 
     // --- Progress ---
-    function ProgressView({ moods }) {
+    function ProgressView({ moods, journals }) {
       const recent = moods.slice(-14);
       const avg = recent.length ? (recent.reduce((s, m) => s + m.mood, 0) / recent.length).toFixed(1) : '—';
+
+      // Streak calculation
+      const getStreak = () => {
+        if (!moods.length) return 0;
+        const dates = [...new Set(moods.map(m => m.date.slice(0,10)))].sort().reverse();
+        let streak = 0;
+        let current = new Date();
+        current.setHours(0,0,0,0);
+        for (let d of dates) {
+          const day = new Date(d);
+          const diff = Math.round((current - day) / 86400000);
+          if (diff === 0 || diff === streak) { streak++; current = day; }
+          else break;
+        }
+        return streak;
+      };
+      const streak = getStreak();
+
+      // Milestones
+      const total = moods.length + journals.length;
+      const milestones = [
+        { count: 1, label: 'Första steget', emoji: '🌱' },
+        { count: 5, label: '5 inlägg', emoji: '⭐' },
+        { count: 10, label: '10 inlägg', emoji: '🎯' },
+        { count: 25, label: '25 inlägg', emoji: '🏆' },
+        { count: 50, label: '50 inlägg', emoji: '💪' },
+        { count: 100, label: '100 inlägg', emoji: '🚀' },
+      ];
+
+      // Activity heatmap (last 28 days)
+      const heatmap = () => {
+        const days = [];
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const moodDates = new Set(moods.map(m => m.date.slice(0,10)));
+        const journalDates = new Set(journals.map(j => j.date.slice(0,10)));
+        for (let i = 27; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().slice(0,10);
+          const hasMood = moodDates.has(key);
+          const hasJournal = journalDates.has(key);
+          days.push({ key, hasMood, hasJournal, active: hasMood || hasJournal });
+        }
+        return days;
+      };
+      const heatDays = heatmap();
+
       const focusCounts = {};
-      moods.forEach(m => { focusCounts[m.focus] = (focusCounts[m.focus] || 0) + 1; });
+      moods.forEach(m => { if(m.focus) focusCounts[m.focus] = (focusCounts[m.focus] || 0) + 1; });
       const maxCount = Math.max(...Object.values(focusCounts), 1);
+
       return (
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-5">
           <h2 className="text-xl font-bold text-green-800">📊 Framsteg</h2>
-          <div className="stats shadow w-full bg-white">
-            <div className="stat">
-              <div className="stat-title">Genomsnitt (14 dagar)</div>
-              <div className="stat-value text-green-600">{avg}</div>
-              <div className="stat-desc">av 5.0</div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="card bg-white shadow-sm text-center p-3">
+              <div className="text-2xl font-bold text-orange-500">🔥 {streak}</div>
+              <div className="text-xs text-gray-500 mt-1">dagars streak</div>
             </div>
-            <div className="stat">
-              <div className="stat-title">Totala incheckningar</div>
-              <div className="stat-value text-green-600">{moods.length}</div>
+            <div className="card bg-white shadow-sm text-center p-3">
+              <div className="text-2xl font-bold text-green-600">{avg}</div>
+              <div className="text-xs text-gray-500 mt-1">snitt mående</div>
+            </div>
+            <div className="card bg-white shadow-sm text-center p-3">
+              <div className="text-2xl font-bold text-blue-500">{total}</div>
+              <div className="text-xs text-gray-500 mt-1">totala inlägg</div>
             </div>
           </div>
+
+          {/* Activity heatmap */}
+          <div className="card bg-white shadow-sm">
+            <div className="card-body p-4">
+              <h3 className="font-semibold text-green-700 mb-3">Aktivitet – 28 dagar</h3>
+              <div className="grid grid-cols-7 gap-1">
+                {heatDays.map((d, i) => (
+                  <div
+                    key={d.key}
+                    title={d.key}
+                    className={"rounded w-full aspect-square " + (
+                      d.hasMood && d.hasJournal ? "bg-green-600" :
+                      d.active ? "bg-green-300" :
+                      "bg-gray-100"
+                    )}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-3 mt-2 text-xs text-gray-400">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block"/> Ingen</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-300 inline-block"/> Aktiv</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-600 inline-block"/> Båda</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Milestones */}
+          <div className="card bg-white shadow-sm">
+            <div className="card-body p-4">
+              <h3 className="font-semibold text-green-700 mb-3">Milstolpar</h3>
+              <div className="space-y-2">
+                {milestones.map(m => {
+                  const done = total >= m.count;
+                  return (
+                    <div key={m.count} className={"flex items-center gap-3 p-2 rounded-lg " + (done ? "bg-green-50" : "opacity-40")}>
+                      <span className="text-xl">{done ? m.emoji : '🔒'}</span>
+                      <span className={"text-sm flex-1 " + (done ? "text-green-800 font-medium" : "text-gray-400")}>{m.label}</span>
+                      {done && <span className="text-xs text-green-500">✓ Uppnådd</span>}
+                      {!done && <span className="text-xs text-gray-400">{m.count - total} kvar</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Mood trend */}
           {recent.length > 0 && (
             <div className="card bg-white shadow-sm">
               <div className="card-body p-4">
-                <h3 className="font-semibold text-green-700 mb-3">Mående-trend</h3>
-                <div className="flex items-end gap-1 h-32">
+                <h3 className="font-semibold text-green-700 mb-3">Mående-trend (14 dagar)</h3>
+                <div className="flex items-end gap-1 h-24">
                   {recent.map((m, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1">
                       <div className="bg-green-400 rounded-t w-full transition-all" style={{ height: `${(m.mood / 5) * 100}%` }} />
-                      <span className="text-[10px] text-gray-400">{new Date(m.date).getDate()}</span>
+                      <span className="text-[9px] text-gray-400">{new Date(m.date).getDate()}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           )}
+
+          {/* Focus areas */}
           {Object.keys(focusCounts).length > 0 && (
             <div className="card bg-white shadow-sm">
               <div className="card-body p-4">
@@ -224,7 +327,8 @@
               </div>
             </div>
           )}
-          {moods.length === 0 && (
+
+          {moods.length === 0 && journals.length === 0 && (
             <div className="text-center py-8 text-gray-400">
               <TrendingUp size={48} className="mx-auto mb-3 opacity-50" />
               <p>Ingen data ännu</p>
@@ -316,7 +420,7 @@
             {view === 'home' && <HomeView moods={moods} journals={journals} onNavigate={setView} />}
             {view === 'mood' && <MoodCheckIn onSave={handleMoodSave} />}
             {view === 'journal' && <JournalView entries={journals} onAdd={handleJournalAdd} onDelete={handleJournalDelete} />}
-            {view === 'progress' && <ProgressView moods={moods} />}
+            {view === 'progress' && <ProgressView moods={moods} journals={journals} />}
           </div>
           <Navigation active={view} onNavigate={setView} />
         </div>
