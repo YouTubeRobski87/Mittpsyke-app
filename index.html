@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MittPsyke" />
+  <meta name="version" content="2.1.0" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>MittPsyke Wellness Tracker</title>
@@ -27,7 +28,7 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
-    const { Home, BookOpen, TrendingUp, PlusCircle, Trash2, ArrowLeft, ExternalLink, Heart, Brain, Shield, Sparkles } = lucideReact;
+    const { Home, BookOpen, TrendingUp, PlusCircle, Trash2, ArrowLeft, ExternalLink, Heart, Brain, Shield, Sparkles, Map } = lucideReact;
 
     // --- Storage helpers (localStorage) ---
     function loadData(key, fallback) {
@@ -44,7 +45,7 @@
         { id: 'home', label: 'Hem', icon: Home },
         { id: 'mood', label: 'Mående', icon: PlusCircle },
         { id: 'journal', label: 'Dagbok', icon: BookOpen },
-        { id: 'guides', label: 'Guider', icon: BookOpen },
+        { id: 'guides', label: 'Guider', icon: Map },
         { id: 'progress', label: 'Framsteg', icon: TrendingUp },
       ];
       return (
@@ -428,6 +429,7 @@
     // --- Guides ---
     function GuidesView() {
       const [open, setOpen] = React.useState(null);
+      const toggle = (id) => { setOpen(prev => prev === id ? null : id); };
       const guides = [
         {
           id: 'anxiety',
@@ -537,7 +539,7 @@
               <div key={g.id} className={"card shadow-sm border transition-all duration-200 " + c.border + " " + (isOpen ? c.bg : "bg-white")}>
                 <button
                   className="card-body p-4 text-left w-full"
-                  onClick={() => setOpen(isOpen ? null : g.id)}
+                  onClick={() => toggle(g.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
