@@ -1,24 +1,36 @@
 {
-  "name": "MittPsyke Wellness Tracker",
+  "name": "MittPsyke",
   "short_name": "MittPsyke",
-  "description": "Mental wellness reflection & mood tracker — din trygga plats för reflektion",
-  "start_url": "/index.html",
+  "description": "En lugn och trygg plats för din mentala hälsa.",
+  "start_url": "https://www.mittpsyke.com/",
   "display": "standalone",
-  "background_color": "#f0fdf4",
-  "theme_color": "#16a34a",
-  "orientation": "portrait",
+  "background_color": "#f8f4ed",
+  "theme_color": "#8da97c",
+  "lang": "sv",
+  "scope": "/",
+  "id": "com.mittpsyke.app",
+  "orientation": "any",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/pwa-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "dir": "auto",
+  "categories": [
+    "health",
+    "social"
   ]
 }
